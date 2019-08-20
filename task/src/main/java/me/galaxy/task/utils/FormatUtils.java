@@ -1,5 +1,8 @@
 package me.galaxy.task.utils;
 
+import me.galaxy.task.Task;
+import org.springframework.util.StringUtils;
+
 import java.lang.reflect.Method;
 
 public class FormatUtils {
@@ -21,6 +24,19 @@ public class FormatUtils {
             b.append(", ");
         }
 
+    }
+
+    public static String methodCompleteName(Method method) {
+        return "[" + method.getDeclaringClass().getName() + "]" + method.getName() + FormatUtils.methodParameterTypesToString(method);
+    }
+
+    public static String taskUniqueName(Object clazz, Method method, Task task) {
+
+        if (task != null && !StringUtils.isEmpty(task.name())) {
+            return task.name();
+        }
+
+        return FormatUtils.methodCompleteName(method);
     }
 
 }

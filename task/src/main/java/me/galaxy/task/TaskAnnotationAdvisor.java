@@ -2,6 +2,9 @@ package me.galaxy.task;
 
 import me.galaxy.task.aop.SimpleTaskUncaughtExceptionHandler;
 import me.galaxy.task.aop.TaskUncaughtExceptionHandler;
+import me.galaxy.task.executor.TaskExecuteActor;
+import me.galaxy.task.executor.TaskExecutorCenter;
+import me.galaxy.task.status.TaskLifeCycle;
 import org.aopalliance.aop.Advice;
 import org.springframework.aop.Pointcut;
 import org.springframework.aop.support.AbstractPointcutAdvisor;
@@ -24,7 +27,7 @@ public class TaskAnnotationAdvisor extends AbstractPointcutAdvisor implements Be
 
     private Pointcut pointcut;
 
-    public TaskAnnotationAdvisor(Executor executor, TaskUncaughtExceptionHandler exceptionHandler) {
+    public TaskAnnotationAdvisor(TaskExecutorCenter taskExecutorCenter, TaskLifeCycle lifeCycle, Executor executor, TaskUncaughtExceptionHandler exceptionHandler) {
         Set<Class<? extends Annotation>> asyncAnnotationTypes = new LinkedHashSet<Class<? extends Annotation>>(2);
         asyncAnnotationTypes.add(Task.class);
 
@@ -34,7 +37,7 @@ public class TaskAnnotationAdvisor extends AbstractPointcutAdvisor implements Be
             this.exceptionHandler = new SimpleTaskUncaughtExceptionHandler();
         }
 
-        this.advice = buildAdvice(executor, this.exceptionHandler);
+        this.advice = buildAdvice(taskExecutorCenter, lifeCycle, executor, this.exceptionHandler);
         this.pointcut = buildPointcut(asyncAnnotationTypes);
     }
 
@@ -58,8 +61,10 @@ public class TaskAnnotationAdvisor extends AbstractPointcutAdvisor implements Be
     /**
      * 构建增强方法
      */
-    protected TaskAnnotationExecutionInterceptor buildAdvice(Executor executor, TaskUncaughtExceptionHandler exceptionHandler) {
-        return new TaskAnnotationExecutionInterceptor(executor, exceptionHandler);
+    protected TaskAnnotationExecutionInterceptor buildAdvice(TaskExecutorCenter taskExecutorCenter, TaskLifeCycle lifeCycle, Executor executor, TaskUncaughtExceptionHandler exceptionHandler) {
+        TaskAnnotationExecutionInterceptor interceptor = new TaskAnnotationExecutionInterceptor(taskExecutorCenter, executor, exceptionHandler);
+        interceptor.setLifeCycle(lifeCycle);
+        return interceptor;
     }
 
     /**

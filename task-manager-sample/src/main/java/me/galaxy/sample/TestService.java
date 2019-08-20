@@ -11,8 +11,8 @@ import java.util.concurrent.Future;
 @Service
 public class TestService {
 
-    @Task
-    public Future<String> send(String msg) {
+    @Task(retryTimes = 0)
+    public void send(String msg) {
 
         try {
             Thread.sleep(3000);
@@ -21,7 +21,16 @@ public class TestService {
             e.printStackTrace();
         }
 
-        return new AsyncResult<String>("finish");
+    }
+
+    @Task(retryTimes = 1)
+    public void send2() {
+        try {
+            Thread.sleep(1000);
+            System.out.println("haha");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
 }

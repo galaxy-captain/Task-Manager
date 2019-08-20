@@ -11,7 +11,9 @@ public @interface Task {
 
     String name() default "";
 
-    int retryTimes() default 0;
+    String executor() default "";
+
+    int retryTimes() default -1;
 
     Class<? extends Throwable>[] ignorableException() default {};
 

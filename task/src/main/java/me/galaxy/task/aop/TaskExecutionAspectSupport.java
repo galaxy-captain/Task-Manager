@@ -12,27 +12,17 @@ import org.springframework.core.task.AsyncListenableTaskExecutor;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.core.task.support.TaskExecutorAdapter;
-import org.springframework.lang.UsesJava8;
-import org.springframework.util.ClassUtils;
-import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
-import org.springframework.util.concurrent.ListenableFuture;
 
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.concurrent.*;
-import java.util.function.Supplier;
 
 public abstract class TaskExecutionAspectSupport implements BeanFactoryAware {
 
-    public static final String DEFAULT_TASK_EXECUTOR_BEAN_NAME = "taskExecutor";
-
-    private static final boolean completableFuturePresent = ClassUtils.isPresent(
-            "java.util.concurrent.CompletableFuture",
-            TaskExecutionInterceptor.class.getClassLoader()
-    );
-
     protected final Logger logger = LoggerFactory.getLogger(TaskExecutionAspectSupport.class);
+
+    public static final String DEFAULT_TASK_EXECUTOR_BEAN_NAME = "taskExecutor";
 
     private final Map<Method, AsyncTaskExecutor> executors = new ConcurrentHashMap<Method, AsyncTaskExecutor>(16);
 
@@ -106,7 +96,7 @@ public abstract class TaskExecutionAspectSupport implements BeanFactoryAware {
         return executor;
     }
 
-    protected Executor findQualifiedExecutor(BeanFactory beanFactory, String qualifier) {
+    private Executor findQualifiedExecutor(BeanFactory beanFactory, String qualifier) {
         if (beanFactory == null) {
             throw new IllegalStateException("BeanFactory must be set on " + getClass().getSimpleName() + " to access qualified executor '" + qualifier + "'");
         }
@@ -138,59 +128,6 @@ public abstract class TaskExecutionAspectSupport implements BeanFactoryAware {
             }
         }
         return null;
-    }
-
-    protected Object doSubmit(Callable<Object> task, AsyncTaskExecutor executor, Class<?> returnType) {
-
-        if (completableFuturePresent) {
-            Future<Object> result = CompletableFutureDelegate.processCompletableFuture(returnType, task, executor);
-            if (result != null) {
-                return result;
-            }
-        }
-
-        if (ListenableFuture.class.isAssignableFrom(returnType)) {
-            return ((AsyncListenableTaskExecutor) executor).submitListenable(task);
-        } else if (Future.class.isAssignableFrom(returnType)) {
-            return executor.submit(task);
-        } else {
-            executor.submit(task);
-            return null;
-        }
-
-    }
-
-    protected void handleError(Throwable ex, Method method, Object... params) throws Exception {
-        if (Future.class.isAssignableFrom(method.getReturnType())) {
-            ReflectionUtils.rethrowException(ex);
-        } else {
-            try {
-                this.exceptionHandler.handleUncaughtException(ex, method, params);
-            } catch (Throwable ex2) {
-                logger.error("Exception handler for async method '" + method.toGenericString() + "' threw unexpected exception itself", ex2);
-            }
-        }
-    }
-
-    @UsesJava8
-    private static class CompletableFutureDelegate {
-
-        public static <T> Future<T> processCompletableFuture(Class<?> returnType, final Callable<T> task, Executor executor) {
-            if (!CompletableFuture.class.isAssignableFrom(returnType)) {
-                return null;
-            }
-            return CompletableFuture.supplyAsync(new Supplier<T>() {
-                @Override
-                public T get() {
-                    try {
-                        return task.call();
-                    } catch (Throwable ex) {
-                        throw new CompletionException(ex);
-                    }
-                }
-            }, executor);
-        }
-
     }
 
 }

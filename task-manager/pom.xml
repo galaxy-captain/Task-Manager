@@ -14,11 +14,13 @@
     <artifactId>task-manager</artifactId>
 
     <dependencies>
+
         <dependency>
             <groupId>me.galaxy</groupId>
             <artifactId>task</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
+
     </dependencies>
 
 </project>

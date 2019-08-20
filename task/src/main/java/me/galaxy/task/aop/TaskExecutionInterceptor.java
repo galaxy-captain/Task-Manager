@@ -1,5 +1,8 @@
 package me.galaxy.task.aop;
 
+import me.galaxy.task.executor.TaskExecuteActor;
+import me.galaxy.task.executor.TaskExecutorCenter;
+import me.galaxy.task.status.TaskLifeCycle;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.aop.support.AopUtils;
@@ -11,19 +14,21 @@ import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.util.ClassUtils;
 
 import java.lang.reflect.Method;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Future;
 
 public abstract class TaskExecutionInterceptor extends TaskExecutionAspectSupport implements MethodInterceptor, Ordered {
 
-    public TaskExecutionInterceptor(Executor defaultExecutor) {
-        super(defaultExecutor);
+    private TaskExecutorCenter taskExecutorCenter;
+
+    private TaskLifeCycle lifeCycle;
+
+    public TaskExecutionInterceptor(TaskExecutorCenter taskExecutorCenter, Executor defaultExecutor, TaskUncaughtExceptionHandler exceptionHandler) {
+        super(defaultExecutor, exceptionHandler);
+        this.taskExecutorCenter = taskExecutorCenter;
     }
 
-    public TaskExecutionInterceptor(Executor defaultExecutor, TaskUncaughtExceptionHandler exceptionHandler) {
-        super(defaultExecutor, exceptionHandler);
+    public void setLifeCycle(TaskLifeCycle lifeCycle) {
+        this.lifeCycle = lifeCycle;
     }
 
     @Override
@@ -40,33 +45,17 @@ public abstract class TaskExecutionInterceptor extends TaskExecutionAspectSuppor
             throw new IllegalStateException("No executor specified and no default executor set on TaskExecutionInterceptor either");
         }
 
-        Callable<Object> task = new Callable<Object>() {
+        Object[] arguments = invocation.getArguments();
+        String taskUniqueName = generateTaskUniqueName(invocation);
 
-            @Override
-            public Object call() throws Exception {
+        // 获取任务
+        TaskExecuteActor taskExecuteActor = this.taskExecutorCenter.buildTaskExecuteActor(taskUniqueName, executor, this.lifeCycle);
 
-                try {
-
-                    Object result = invocation.proceed();
-                    if (result instanceof Future) {
-                        return ((Future<?>) result).get();
-                    }
-
-                } catch (ExecutionException ex) {
-                    handleError(ex.getCause(), userDeclaredMethod, invocation.getArguments());
-                } catch (Throwable ex) {
-                    handleError(ex, userDeclaredMethod, invocation.getArguments());
-                }
-
-                return null;
-            }
-
-        };
-
-        return doSubmit(task, executor, invocation.getMethod().getReturnType());
+        // 提交任务
+        return taskExecuteActor.submit(arguments);
     }
 
-    protected abstract String generateMethodUniqueKey(Method method);
+    protected abstract String generateTaskUniqueName(MethodInvocation invocation);
 
     @Override
     protected Executor getDefaultExecutor(BeanFactory beanFactory) {

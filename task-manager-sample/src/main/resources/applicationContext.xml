@@ -12,9 +12,5 @@
 
     <context:component-scan base-package="me.galaxy.sample"/>
 
-    <!-- 执行异步任务的线程池TaskExecutor -->
-    <task:executor id="taskExecutor" pool-size="5"  />
-
-    <task:annotation-driven executor="taskExecutor"/>
 
 </beans>
