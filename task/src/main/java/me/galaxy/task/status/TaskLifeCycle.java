@@ -1,5 +1,8 @@
 package me.galaxy.task.status;
 
+import me.galaxy.task.executor.AnnotationTaskExecuteActor;
+import me.galaxy.task.executor.TaskExecuteActorVisitor;
+
 import java.lang.reflect.Method;
 
 /**
@@ -9,29 +12,38 @@ import java.lang.reflect.Method;
  **/
 public interface TaskLifeCycle {
 
-    /**
-     * 初始化状态
-     */
-    String onInitialize(Object clazz, Method method, Object[] arguments);
+//    /**
+//     * 初始化状态
+//     */
+//    String onInitialize(Object clazz, Method method, Object[] arguments);
+//
+//    /**
+//     * 等待状态
+//     */
+//    void onWait(String taskUniqueId, TaskStatus status);
+//
+//    /**
+//     * 执行状态
+//     */
+//    void onRunning(String taskUniqueId, TaskStatus status);
+//
+//    /**
+//     * 完成状态
+//     */
+//    void onAchieved(String taskUniqueId, TaskStatus status, Object result);
+//
+//    /**
+//     * 终止状态
+//     */
+//    void onBroken(String taskUniqueId, TaskStatus status, Throwable t);
 
-    /**
-     * 等待状态
-     */
-    void onWait(String taskUniqueId, TaskStatus status);
+    String onInitialize(TaskExecuteActorVisitor visitor, Object[] arguments);
 
-    /**
-     * 执行状态
-     */
-    void onRunning(String taskUniqueId, TaskStatus status);
+    void onWait(TaskExecuteActorVisitor visitor);
 
-    /**
-     * 完成状态
-     */
-    void onAchieved(String taskUniqueId, TaskStatus status, Object result);
+    void onRunning(TaskExecuteActorVisitor visitor);
 
-    /**
-     * 终止状态
-     */
-    void onBroken(String taskUniqueId, TaskStatus status, Throwable t);
+    void onAchieved(TaskExecuteActorVisitor visitor, Object result);
 
+    void onBroken(TaskExecuteActorVisitor visitor, Throwable t, Object[] arguments);
 }

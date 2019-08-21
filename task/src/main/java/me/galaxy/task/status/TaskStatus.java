@@ -10,7 +10,7 @@ public enum TaskStatus {
     INIT("INIT", "0"),
     WAIT("WAIT", "100"),
     RUNNING("RUNNING", "200"),
-    ACHIEVE("ACHIEVE", "300"),
+    ACHIEVED("ACHIEVED", "300"),
     BROKEN("BROKEN", "400");
 
     private String value;

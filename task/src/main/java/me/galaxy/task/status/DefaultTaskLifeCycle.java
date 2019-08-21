@@ -1,5 +1,7 @@
 package me.galaxy.task.status;
 
+import me.galaxy.task.executor.AnnotationTaskExecuteActor;
+import me.galaxy.task.executor.TaskExecuteActorVisitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,31 +17,31 @@ public class DefaultTaskLifeCycle implements TaskLifeCycle {
     private static final Logger logger = LoggerFactory.getLogger(DefaultTaskLifeCycle.class);
 
     @Override
-    public String onInitialize(Object clazz, Method method, Object[] arguments) {
+    public String onInitialize(TaskExecuteActorVisitor visitor, Object[] arguments) {
         return System.currentTimeMillis() + "";
     }
 
     @Override
-    public void onWait(String taskUniqueId, TaskStatus status) {
-        String msg = String.format("id=%s,status=%s", taskUniqueId, "onWait");
+    public void onWait(TaskExecuteActorVisitor visitor) {
+        String msg = String.format("id=%s,status=%s", visitor.getId(), "onWait");
         System.out.println(msg);
     }
 
     @Override
-    public void onRunning(String taskUniqueId, TaskStatus status) {
-        String msg = String.format("id=%s,status=%s", taskUniqueId, "onRunning");
+    public void onRunning(TaskExecuteActorVisitor visitor) {
+        String msg = String.format("id=%s,status=%s", visitor.getId(), "onRunning");
         System.out.println(msg);
     }
 
     @Override
-    public void onAchieved(String taskUniqueId, TaskStatus status, Object result) {
-        String msg = String.format("id=%s,status=%s", taskUniqueId, "onAchieved");
+    public void onAchieved(TaskExecuteActorVisitor visitor, Object result) {
+        String msg = String.format("id=%s,status=%s", visitor.getId(), "onAchieved");
         System.out.println(msg);
     }
 
     @Override
-    public void onBroken(String taskUniqueId, TaskStatus status, Throwable t) {
-        String msg = String.format("id=%s,status=%s", taskUniqueId, "onBroken");
+    public void onBroken(TaskExecuteActorVisitor visitor, Throwable t, Object[] arguments) {
+        String msg = String.format("id=%s,status=%s", visitor.getId(), "onBroken");
         System.out.println(msg);
         t.printStackTrace();
     }

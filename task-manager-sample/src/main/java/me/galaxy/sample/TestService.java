@@ -2,8 +2,10 @@ package me.galaxy.sample;
 
 import me.galaxy.task.EnableTask;
 import me.galaxy.task.Task;
+import me.galaxy.task.TaskResult;
 import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
+import org.springframework.util.concurrent.ListenableFuture;
 
 import java.util.concurrent.Future;
 
@@ -11,16 +13,19 @@ import java.util.concurrent.Future;
 @Service
 public class TestService {
 
-    @Task(retryTimes = 0)
-    public void send(String msg) {
+    @Task(name = "send", retryTimes = 3)
+    public ListenableFuture<String> send(String msg) {
 
         try {
-            Thread.sleep(3000);
+            Thread.sleep(1000);
             System.out.println(msg);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
+        throw new RuntimeException("错误");
+
+//        return new TaskResult<String>("ok");
     }
 
     @Task(retryTimes = 1)

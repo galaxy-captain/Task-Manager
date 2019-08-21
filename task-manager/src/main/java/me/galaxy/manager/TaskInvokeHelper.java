@@ -33,8 +33,8 @@ public class TaskInvokeHelper {
         this.executor = executor;
     }
 
-    public Object invoke(String name, Object... arguments) {
-        return this.center.buildTaskExecuteActor(name, this.executor, this.lifeCycle).submit(arguments);
+    public <T> T invoke(String name, Object... arguments) {
+        return (T) this.center.buildTaskExecuteActor(name, this.executor, this.lifeCycle).submit(arguments);
     }
 
     public Object invoke(String name, AsyncTaskExecutor executor, Object... arguments) {

@@ -1,8 +1,12 @@
 package me.galaxy.sample;
 
+import me.galaxy.manager.TaskRecordService;
+import me.galaxy.task.executor.TaskExecuteActorVisitor;
 import me.galaxy.task.status.TaskLifeCycle;
 import me.galaxy.task.status.TaskStatus;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.lang.reflect.Method;
 
@@ -13,29 +17,62 @@ import java.lang.reflect.Method;
  **/
 public class TaskRecordWithRDS implements TaskLifeCycle {
 
+    @Autowired
+    private TaskRecordService taskRecordService;
+
+    @Transactional
     @Override
-    public String onInitialize(Object clazz, Method method, Object[] arguments) {
-        return null;
+    public String onInitialize(TaskExecuteActorVisitor visitor, Object[] arguments) {
+        return taskRecordService.initTaskExecuteStage(
+                visitor.getName(),
+                arguments,
+                visitor.getExecuteCount(),
+                visitor.getMaxRetryCount()
+        );
     }
 
     @Override
-    public void onWait(String taskUniqueId, TaskStatus status) {
-
+    public void onWait(TaskExecuteActorVisitor visitor) {
+        taskRecordService.saveTaskExecuteStage(
+                visitor.getId(),
+                visitor.getName(),
+                TaskStatus.WAIT,
+                visitor.getExecuteCount(),
+                visitor.getMaxRetryCount()
+        );
     }
 
     @Override
-    public void onRunning(String taskUniqueId, TaskStatus status) {
-
+    public void onRunning(TaskExecuteActorVisitor visitor) {
+        taskRecordService.saveTaskExecuteStage(
+                visitor.getId(),
+                visitor.getName(),
+                TaskStatus.RUNNING,
+                visitor.getExecuteCount(),
+                visitor.getMaxRetryCount()
+        );
     }
 
     @Override
-    public void onAchieved(String taskUniqueId, TaskStatus status, Object result) {
-
+    public void onAchieved(TaskExecuteActorVisitor visitor, Object result) {
+        taskRecordService.saveTaskExecuteStage(
+                visitor.getId(),
+                visitor.getName(),
+                TaskStatus.ACHIEVED,
+                visitor.getExecuteCount(),
+                visitor.getMaxRetryCount()
+        );
     }
 
     @Override
-    public void onBroken(String taskUniqueId, TaskStatus status, Throwable t) {
-
+    public void onBroken(TaskExecuteActorVisitor visitor, Throwable t, Object[] arguments) {
+        taskRecordService.saveTaskExecuteStage(
+                visitor.getId(),
+                visitor.getName(),
+                TaskStatus.BROKEN,
+                visitor.getExecuteCount(),
+                visitor.getMaxRetryCount()
+        );
     }
 
 }

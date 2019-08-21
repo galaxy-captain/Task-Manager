@@ -51,8 +51,10 @@ public abstract class TaskExecutionInterceptor extends TaskExecutionAspectSuppor
         // 获取任务
         TaskExecuteActor taskExecuteActor = this.taskExecutorCenter.buildTaskExecuteActor(taskUniqueName, executor, this.lifeCycle);
 
+        Object result = taskExecuteActor.submit(arguments);
+
         // 提交任务
-        return taskExecuteActor.submit(arguments);
+        return result;
     }
 
     protected abstract String generateTaskUniqueName(MethodInvocation invocation);

@@ -19,11 +19,13 @@ import java.util.function.Supplier;
  * @Author galaxy-captain
  * @Date 2019-08-20 10:44
  **/
-public abstract class AbstractTaskExecuteActor implements TaskExecuteActor {
+public abstract class AbstractTaskExecuteActor implements TaskExecuteActor, TaskExecuteActorVisitor {
 
     private static final int DEFAULT_RETRY_COUNT = 1;
 
-    private String taskUniqueId;
+    protected String taskName;
+
+    protected String taskUniqueId;
 
     protected Object clazz;
 
@@ -39,22 +41,28 @@ public abstract class AbstractTaskExecuteActor implements TaskExecuteActor {
     /**
      * 任务生命周期回调
      */
-    private TaskLifeCycle lifeCycle;
+    protected TaskLifeCycle lifeCycle;
 
     /**
      * 任务状态
      */
-    private TaskStatus status;
+    protected TaskStatus status;
 
     /**
      * 任务执行次数
      */
-    private int executeCount;
+    protected int executeCount;
+
+    private Throwable throwable;
 
     public AbstractTaskExecuteActor() {
         this.status = TaskStatus.INIT;
         this.maxRetryCount = DEFAULT_RETRY_COUNT;
         this.executeCount = 0;
+    }
+
+    public void setTaskName(String taskName) {
+        this.taskName = taskName;
     }
 
     public void setClazz(Object clazz) {
@@ -88,19 +96,23 @@ public abstract class AbstractTaskExecuteActor implements TaskExecuteActor {
     @Override
     public Object submit(Object... arguments) {
 
-        if (this.lifeCycle != null) {
-            this.taskUniqueId = this.lifeCycle.onInitialize(this.clazz, this.method, arguments);
+        if (this.lifeCycle != null && this.executeCount == 0) {
+            this.taskUniqueId = this.lifeCycle.onInitialize(this, arguments);
+        } else if (this.executeCount == 0) {
+            this.taskUniqueId = this.taskName + "-" + System.currentTimeMillis();
         }
 
         if (this.lifeCycle != null) {
-            this.lifeCycle.onWait(this.taskUniqueId, this.status);
+            this.lifeCycle.onWait(this);
         }
 
-        return doSubmit(
+        Object result = doSubmit(
                 this.executor,
                 this.buildTask(arguments),
                 this.method.getReturnType()
         );
+
+        return result;
     }
 
     /**
@@ -108,23 +120,25 @@ public abstract class AbstractTaskExecuteActor implements TaskExecuteActor {
      */
     public Object execute(Object... arguments) throws Exception {
 
+        this.executeCount++;
+
         if (this.lifeCycle != null) {
-            this.lifeCycle.onRunning(taskUniqueId, this.status);
+            this.lifeCycle.onRunning(this);
         }
         this.status = TaskStatus.RUNNING;
 
         try {
             Object result = AopUtils.invokeJoinpointUsingReflection(this.clazz, this.method, arguments);
+            this.finish(result, arguments);
             if (result instanceof Future) {
                 return ((Future<?>) result).get();
             }
-
-            this.finish(result, arguments);
         } catch (ExecutionException ex) {
             this.handleError(ex.getCause(), this.method, arguments);
         } catch (Throwable ex) {
             this.handleError(ex, this.method, arguments);
         }
+
         return null;
 
     }
@@ -132,8 +146,8 @@ public abstract class AbstractTaskExecuteActor implements TaskExecuteActor {
     /**
      * 任务重试
      */
-    public void retry(Object... arguments) {
-        this.submit(arguments);
+    public Object retry(Object... arguments) {
+        return this.submit(arguments);
     }
 
     /**
@@ -142,23 +156,25 @@ public abstract class AbstractTaskExecuteActor implements TaskExecuteActor {
     public void finish(Object result, Object... arguments) {
 
         if (this.lifeCycle != null) {
-            this.lifeCycle.onAchieved(this.taskUniqueId, this.status, result);
+            this.lifeCycle.onAchieved(this, result);
         }
 
-        this.status = TaskStatus.ACHIEVE;
+        this.status = TaskStatus.ACHIEVED;
     }
 
     /**
      * 任务终止
      */
     public void terminate(Throwable ex, Object... arguments) throws Exception {
-        if (Future.class.isAssignableFrom(method.getReturnType())) {
-            ReflectionUtils.rethrowException(ex);
-        } else {
-            if (this.lifeCycle != null) {
-                this.lifeCycle.onBroken(this.taskUniqueId, this.status, ex);
-            }
+
+        if (this.lifeCycle != null) {
+            this.lifeCycle.onBroken(this, ex, arguments);
         }
+
+        if (Future.class.isAssignableFrom(this.method.getReturnType())) {
+            ReflectionUtils.rethrowException(ex);
+        }
+
     }
 
     /**
@@ -176,14 +192,15 @@ public abstract class AbstractTaskExecuteActor implements TaskExecuteActor {
     /**
      * 处理异常情况
      */
-    protected void handleError(Throwable ex, Method method, Object... params) throws Exception {
+    protected void handleError(Throwable ex, Method method, Object... arguments) throws Exception {
 
-        if (this.executeCount < this.maxRetryCount) {
-            this.executeCount++;
-            this.retry(params);
+        if (this.executeCount < this.maxRetryCount + 1) {
+            // 重新提交
+            this.retry(arguments);
         } else {
-            this.terminate(ex, params);
+            this.terminate(ex, arguments);
         }
+
     }
 
     /**

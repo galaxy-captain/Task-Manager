@@ -1,5 +1,7 @@
 package me.galaxy.task.executor;
 
+import me.galaxy.task.status.TaskLifeCycle;
+import me.galaxy.task.status.TaskStatus;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.core.BridgeMethodResolver;
 import org.springframework.util.ClassUtils;
@@ -20,6 +22,31 @@ public class AnnotationTaskExecuteActor extends AbstractTaskExecuteActor {
         setClazz(config.getClazz());
         setMethod(config.getMethod());
         setMaxRetryCount(config.getMaxRetryCount());
+        setTaskName(config.getName());
     }
 
+    @Override
+    public String getId() {
+        return taskUniqueId;
+    }
+
+    @Override
+    public String getName() {
+        return taskName;
+    }
+
+    @Override
+    public TaskStatus getStatus() {
+        return status;
+    }
+
+    @Override
+    public int getExecuteCount() {
+        return executeCount;
+    }
+
+    @Override
+    public int getMaxRetryCount() {
+        return maxRetryCount;
+    }
 }

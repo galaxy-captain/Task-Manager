@@ -10,7 +10,6 @@
        http://www.springframework.org/schema/task
        http://www.springframework.org/schema/task/spring-task.xsd">
 
-    <context:component-scan base-package="me.galaxy.sample"/>
-
+    <context:component-scan base-package="me.galaxy.sample;me.galaxy.manager"/>
 
 </beans>

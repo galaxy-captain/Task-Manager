@@ -1,5 +1,7 @@
 package me.galaxy.task.executor;
 
+import me.galaxy.task.TaskConfigurer;
+
 /**
  * @Description
  * @Author galaxy-captain
