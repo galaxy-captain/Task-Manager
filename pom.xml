@@ -15,6 +15,7 @@
         <module>task</module>
         <module>task-manager</module>
         <module>task-manager-sample</module>
+        <module>task-core</module>
     </modules>
 
     <properties>
