@@ -16,6 +16,7 @@
         <module>task-manager</module>
         <module>task-manager-sample</module>
         <module>task-core</module>
+        <module>task-spring</module>
     </modules>
 
     <properties>

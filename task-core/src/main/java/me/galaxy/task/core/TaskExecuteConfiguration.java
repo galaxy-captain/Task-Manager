@@ -16,6 +16,10 @@ public class TaskExecuteConfiguration {
 
     private Class<? extends Exception>[] ignorableException;
 
+    private String executor;
+
+    private String lifecycle;
+
     public Object getObject() {
         return object;
     }
@@ -62,5 +66,21 @@ public class TaskExecuteConfiguration {
 
     public void setIgnorableException(Class<? extends Exception>[] ignorableException) {
         this.ignorableException = ignorableException;
+    }
+
+    public String getExecutor() {
+        return executor;
+    }
+
+    public void setExecutor(String executor) {
+        this.executor = executor;
+    }
+
+    public String getLifecycle() {
+        return lifecycle;
+    }
+
+    public void setLifecycle(String lifecycle) {
+        this.lifecycle = lifecycle;
     }
 }

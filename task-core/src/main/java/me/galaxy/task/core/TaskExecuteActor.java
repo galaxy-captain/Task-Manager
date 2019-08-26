@@ -1,20 +1,15 @@
 package me.galaxy.task.core;
 
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
 
 public abstract class TaskExecuteActor implements Callable<Object>, TaskLifecycle {
 
     private TaskLifecycle lifecycle;
 
-    private TaskExecutor executor;
+    public TaskExecuteActor(TaskLifecycle lifecycle) {
 
-    public TaskExecuteActor(TaskExecutor executor, TaskLifecycle lifecycle) {
-        this.executor = executor;
         this.lifecycle = lifecycle;
-
-        if (this.executor == null) {
-            throw new NullPointerException("Task executor can not be null.");
-        }
 
         if (this.lifecycle == null) {
             throw new NullPointerException("Task lifecycle can not be null.");
@@ -22,9 +17,9 @@ public abstract class TaskExecuteActor implements Callable<Object>, TaskLifecycl
 
     }
 
-    public void submit(Object[] arguments) {
+    public Object execute(Object[] arguments) {
         this.onWait();
-        this.executor.submit(this);
+        return this.submit(arguments);
     }
 
     @Override
@@ -50,6 +45,8 @@ public abstract class TaskExecuteActor implements Callable<Object>, TaskLifecycl
 
         }
     }
+
+    protected abstract Object submit(Object[] arguments);
 
     protected abstract Object execute() throws Exception;
 
